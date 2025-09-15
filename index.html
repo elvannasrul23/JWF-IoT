@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animasi Sistem Penyiraman</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+    
+    h1 {
+      color: #2E7D32;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 1px 1px 2px white;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+    }
+    
+    .layout {
+      position: relative;
+      width: min(95vw, 1000px);
+      height: min(70vh, 600px);
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Pompa */
+    .pompa {
+      position: absolute;
+      left: 50%;
+      top: 90%;
+      width: clamp(30px, 4vw, 40px);
+      height: clamp(30px, 4vw, 40px);
+      background: linear-gradient(to bottom, #9E9E9E, #616161);
+      border: 3px solid #455A64;
+      border-radius: 10px;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      z-index: 10;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      font-size: clamp(12px, 2vw, 16px);
+    }
+    
+    /* Pipa */
+    .pipe {
+      position: absolute;
+      background-color: #90A4AE;
+      border: 2px solid #546E7A;
+      z-index: 1;
+    }
+    
+    .pipe-vertical {
+      width: clamp(10px, 1.5vw, 15px);
+    }
+    
+    .pipe-horizontal {
+      height: clamp(10px, 1.5vw, 15px);
+    }
+    
+    .pipe-water {
+      position: absolute;
+      background-color: rgba(30, 136, 229, 0.7);
+      z-index: 2;
+      transition: all 0.5s ease;
+      border-radius: 2px;
+    }
+    
+    /* Valve */
+    .valve {
+      position: absolute;
+      width: clamp(16px, 2vw, 20px);
+      height: clamp(16px, 2vw, 20px);
+      background-color: #263238;
+      border: 2px solid #000;
+      border-radius: 50%;
+      z-index: 5;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: clamp(8px, 1vw, 10px);
+    }
+    
+    .valve.open {
+      background-color: #4CAF50;
+    }
+    
+    .valve.closed {
+      background-color: #F44336;
+    }
+    
+    /* Keran */
+    .keran {
+      position: absolute;
+      width: clamp(16px, 2vw, 20px);
+      height: clamp(16px, 2vw, 20px);
+      background: linear-gradient(to bottom, #FF9800, #F57C00);
+      border: 2px solid #E65100;
+      border-radius: 5px;
+      z-index: 5;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: clamp(8px, 1vw, 10px);
+    }
+    
+    /* Pohon */
+    .pohon {
+      position: absolute;
+      z-index: 3;
+    }
+    
+    .tree-trunk {
+      position: absolute;
+      width: clamp(6px, 1vw, 8px);
+      height: clamp(15px, 2vw, 20px);
+      background: linear-gradient(to right, #5D4037, #8D6E63);
+      border: 1px solid #4E342E;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .tree-leaves {
+      position: absolute;
+      width: clamp(20px, 2.5vw, 25px);
+      height: clamp(20px, 2.5vw, 25px);
+      background-color: #4CAF50;
+      border-radius: 50%;
+      bottom: clamp(12px, 1.5vw, 15px);
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Sprinkler */
+    .sprinkler {
+      position: absolute;
+      width: clamp(8px, 1vw, 10px);
+      height: clamp(8px, 1vw, 10px);
+      background-color: #00B0FF;
+      border: 2px solid #0091EA;
+      border-radius: 50%;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: clamp(6px, 0.8vw, 8px);
+    }
+    
+    .water-spray {
+      position: absolute;
+      width: clamp(30px, 4vw, 40px);
+      height: clamp(30px, 4vw, 40px);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 4;
+    }
+    
+    .water-spray.active {
+      opacity: 0.6;
+      animation: spray 1.5s infinite;
+    }
+    
+    @keyframes spray {
+      0% { transform: scale(0.8); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 0.4; }
+      100% { transform: scale(0.8); opacity: 0.6; }
+    }
+    
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+      width: 100%;
+      padding: 0 10px;
+    }
+    
+    .control-btn {
+      padding: clamp(8px, 1.5vw, 12px) clamp(12px, 2vw, 20px);
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      min-width: clamp(100px, 15vw, 120px);
+      font-size: clamp(10px, 1.5vw, 14px);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .pump-btn {
+      background: linear-gradient(to bottom, #F44336, #D32F2F);
+      color: white;
+    }
+    
+    .pump-btn.active {
+      background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+    }
+    
+    .valve-btn {
+      background: linear-gradient(to bottom, #9E9E9E, #616161);
+      color: white;
+    }
+    
+    .valve-btn.active {
+      background: linear-gradient(to bottom, #2196F3, #1976D2);
+    }
+    
+    .valve-btn:disabled {
+      background: linear-gradient(to bottom, #BDBDBD, #9E9E9E);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: min(95vw, 1000px);
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+      font-size: clamp(12px, 2vw, 16px);
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .control-btn {
+        width: 100%;
+        max-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1><i class="fas fa-tint"></i> Animasi Sistem Penyiraman</h1>
+  
+  <div class="container">
+    <div class="layout" id="layout">
+      <!-- Komponen akan ditambahkan dengan JavaScript -->
+    </div>
+    
+    <div class="controls">
+      <button class="control-btn pump-btn" id="pump-btn">
+        <i class="fas fa-power-off"></i> Hidupkan Pompa
+      </button>
+      <button class="control-btn valve-btn" id="valve1-btn" disabled>
+        <i class="fas fa-valve"></i> Valve 1: Tertutup
+      </button>
+      <button class="control-btn valve-btn" id="valve2-btn" disabled>
+        <i class="fas fa-valve"></i> Valve 2: Tertutup
+      </button>
+      <button class="control-btn valve-btn" id="valve3-btn" disabled>
+        <i class="fas fa-valve"></i> Valve 3: Tertutup
+      </button>
+      <button class="control-btn valve-btn" id="valve4-btn" disabled>
+        <i class="fas fa-valve"></i> Valve 4: Tertutup
+      </button>
+    </div>
+    
+    <div class="status" id="status">
+      <i class="fas fa-info-circle"></i> Status: Pompa mati. Semua valve tertutup.
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const layout = document.getElementById('layout');
+      const pumpBtn = document.getElementById('pump-btn');
+      const valve1Btn = document.getElementById('valve1-btn');
+      const valve2Btn = document.getElementById('valve2-btn');
+      const valve3Btn = document.getElementById('valve3-btn');
+      const valve4Btn = document.getElementById('valve4-btn');
+      const statusText = document.getElementById('status');
+      
+      let pumpOn = false;
+      const valveStates = [false, false, false, false];
+      const faucetStates = [false, false];
+
+      function getResponsiveValue(baseValue, containerWidth = 800) {
+        const layoutWidth = layout.offsetWidth;
+        return (baseValue / containerWidth) * layoutWidth;
+      }
+
+      function getResponsiveHeight(baseValue, containerHeight = 600) {
+        const layoutHeight = layout.offsetHeight;
+        return (baseValue / containerHeight) * layoutHeight;
+      }
+      
+      // Fungsi untuk membuat pipa
+      function createPipe(x, y, width, height, isHorizontal, id) {
+        const pipe = document.createElement('div');
+        pipe.className = isHorizontal ? 'pipe pipe-horizontal' : 'pipe pipe-vertical';
+        pipe.style.left = getResponsiveValue(x) + 'px';
+        pipe.style.top = getResponsiveHeight(y) + 'px';
+        
+        if (isHorizontal) {
+          pipe.style.width = getResponsiveValue(width) + 'px';
+        } else {
+          pipe.style.height = getResponsiveHeight(height) + 'px';
+        }
+        
+        if (id) pipe.id = id;
+        layout.appendChild(pipe);
+        return pipe;
+      }
+      
+      // Fungsi untuk membuat pipa air (animasi)
+      function createPipeWater(x, y, width, height, isHorizontal, id) {
+        const pipeWater = document.createElement('div');
+        pipeWater.className = 'pipe-water';
+        pipeWater.id = id;
+        pipeWater.style.left = getResponsiveValue(x) + 'px';
+        pipeWater.style.top = getResponsiveHeight(y) + 'px';
+        
+        if (isHorizontal) {
+          pipeWater.style.width = '0px';
+          pipeWater.style.height = getResponsiveHeight(height) + 'px';
+        } else {
+          pipeWater.style.width = getResponsiveValue(width) + 'px';
+          pipeWater.style.height = '0px';
+        }
+        
+        layout.appendChild(pipeWater);
+        return pipeWater;
+      }
+      
+      // Buat pompa
+      const pump = document.createElement('div');
+      pump.className = 'pompa';
+      pump.innerHTML = '<i class="fas fa-cog"></i>';
+      layout.appendChild(pump);
+      
+      // Pipa utama naik dari pompa
+      createPipe(393, 360, 15, 120, false, 'main-pipe-vertical');
+      const mainPipeWater = createPipeWater(394, 360, 11, 120, false, 'main-pipe-water');
+      
+      // Pipa horizontal utama (T pertama)
+      createPipe(160, 360, 470, 15, true, 'main-pipe-horizontal');
+      const mainPipeHorizontalWater = createPipeWater(160, 361, 470, 11, true, 'main-pipe-horizontal-water');
+      
+      // Valve 1 di jalur kiri
+      const valve1 = document.createElement('div');
+      valve1.className = 'valve closed';
+      valve1.id = 'valve-1';
+      valve1.style.left = getResponsiveValue(200) + 'px';
+      valve1.style.top = getResponsiveHeight(358) + 'px';
+      valve1.innerHTML = '<i class="fas fa-stop-circle"></i>';
+      valve1.addEventListener('click', () => toggleValve(0));
+      layout.appendChild(valve1);
+      
+      // Jalur kiri L ke atas (3 pohon + sprinkler)
+      createPipe(200, 120, 15, 240, false, 'left-pipe-vertical');
+      const leftPipeWater = createPipeWater(201, 120, 11, 240, false, 'left-pipe-water');
+      
+      // Buat pohon kiri (3 pohon)
+      for (let i = 0; i < 3; i++) {
+        const tree = document.createElement('div');
+        tree.className = 'pohon';
+        tree.style.left = getResponsiveValue(195 - i*2) + 'px';
+        tree.style.top = getResponsiveHeight(180 + i*50) + 'px';
+        
+        const trunk = document.createElement('div');
+        trunk.className = 'tree-trunk';
+        
+        const leaves = document.createElement('div');
+        leaves.className = 'tree-leaves';
+        
+        tree.appendChild(trunk);
+        tree.appendChild(leaves);
+        layout.appendChild(tree);
+        
+        // Sprinkler untuk setiap pohon
+        const sprinkler = document.createElement('div');
+        sprinkler.className = 'sprinkler';
+        sprinkler.style.left = getResponsiveValue(215 + i*5) + 'px';
+        sprinkler.style.top = getResponsiveHeight(190 + i*50) + 'px';
+        sprinkler.innerHTML = '<i class="fas fa-shower"></i>';
+        layout.appendChild(sprinkler);
+        
+        const spray = document.createElement('div');
+        spray.className = 'water-spray';
+        spray.id = `spray-left-${i}`;
+        spray.style.left = getResponsiveValue(195 + i*5) + 'px';
+        spray.style.top = getResponsiveHeight(170 + i*50) + 'px';
+        spray.style.backgroundColor = '#00B0FF';
+        layout.appendChild(spray);
+      }
+      
+      // Jalur utama ke kanan
+      createPipe(400, 360, 400, 15, true, 'right-pipe-horizontal');
+      const rightPipeWater = createPipeWater(400, 361, 400, 11, true, 'right-pipe-water');
+      
+      // 3 T ke atas di jalur kanan (masing-masing dengan valve)
+      const valvePositions = [520, 600, 680]; // Posisi valve di jalur kanan
+      
+      // Buat valve dan pipa untuk setiap T
+      valvePositions.forEach((x, index) => {
+        // Valve
+        const valve = document.createElement('div');
+        valve.className = 'valve closed';
+        valve.id = `valve-${index+2}`;
+        valve.style.left = getResponsiveValue(x) + 'px';
+        valve.style.top = getResponsiveHeight(358) + 'px';
+        valve.innerHTML = '<i class="fas fa-stop-circle"></i>';
+        valve.addEventListener('click', () => toggleValve(index+1));
+        layout.appendChild(valve);
+        
+        // Pipa vertikal ke atas
+        createPipe(x, 240, 15, 120, false, `valve${index+2}-pipe`);
+        const valvePipeWater = createPipeWater(x+1, 240, 11, 120, false, `valve${index+2}-pipe-water`);
+        
+        // Buat 3 pohon untuk setiap valve
+        for (let i = 0; i < 3; i++) {
+          const tree = document.createElement('div');
+          tree.className = 'pohon';
+          tree.style.left = getResponsiveValue(x - 5 - i*2) + 'px';
+          tree.style.top = getResponsiveHeight(180 + i*50) + 'px';
+          
+          const trunk = document.createElement('div');
+          trunk.className = 'tree-trunk';
+          
+          const leaves = document.createElement('div');
+          leaves.className = 'tree-leaves';
+          
+          tree.appendChild(trunk);
+          tree.appendChild(leaves);
+          layout.appendChild(tree);
+          
+          // Sprinkler untuk setiap pohon
+          const sprinkler = document.createElement('div');
+          sprinkler.className = 'sprinkler';
+          sprinkler.style.left = getResponsiveValue(x + 15 + i*5) + 'px';
+          sprinkler.style.top = getResponsiveHeight(190 + i*50) + 'px';
+          sprinkler.innerHTML = '<i class="fas fa-shower"></i>';
+          layout.appendChild(sprinkler);
+          
+          const spray = document.createElement('div');
+          spray.className = 'water-spray';
+          spray.id = `spray-valve${index+2}-${i}`;
+          spray.style.left = getResponsiveValue(x - 5 + i*5) + 'px';
+          spray.style.top = getResponsiveHeight(170 + i*50) + 'px';
+          spray.style.backgroundColor = '#00B0FF';
+          layout.appendChild(spray);
+        }
+      });
+      
+      // Keran di jalur utama sebelum L terakhir
+      const faucet = document.createElement('div');
+      faucet.className = 'keran';
+      faucet.id = 'faucet-1';
+      faucet.style.left = getResponsiveValue(720) + 'px';
+      faucet.style.top = getResponsiveHeight(372) + 'px';
+      faucet.innerHTML = '<i class="fas fa-faucet"></i>';
+      faucet.addEventListener('click', () => toggleFaucet(0));
+      layout.appendChild(faucet);
+      
+      // Pipa setelah keran (ke L terakhir)
+      createPipe(720, 360, 80, 15, true, 'after-faucet-pipe');
+      const afterFaucetPipeWater = createPipeWater(720, 361, 80, 11, true, 'after-faucet-pipe-water');
+      
+      // L terakhir ke atas (ujung kanan)
+      createPipe(800, 240, 15, 120, false, 'last-L-pipe');
+      const lastLPipeWater = createPipeWater(801, 240, 11, 120, false, 'last-L-pipe-water');
+      
+      // Buat 3 pohon untuk L terakhir
+      for (let i = 0; i < 3; i++) {
+        const tree = document.createElement('div');
+        tree.className = 'pohon';
+        tree.style.left = getResponsiveValue(795) + 'px';
+        tree.style.top = getResponsiveHeight(180 + i*50) + 'px';
+        
+        const trunk = document.createElement('div');
+        trunk.className = 'tree-trunk';
+        
+        const leaves = document.createElement('div');
+        leaves.className = 'tree-leaves';
+        
+        tree.appendChild(trunk);
+        tree.appendChild(leaves);
+        layout.appendChild(tree);
+        
+        // Sprinkler untuk setiap pohon
+        const sprinkler = document.createElement('div');
+        sprinkler.className = 'sprinkler';
+        sprinkler.style.left = getResponsiveValue(815) + 'px';
+        sprinkler.style.top = getResponsiveHeight(190 + i*50) + 'px';
+        sprinkler.innerHTML = '<i class="fas fa-shower"></i>';
+        layout.appendChild(sprinkler);
+        
+        const spray = document.createElement('div');
+        spray.className = 'water-spray';
+        spray.id = `spray-last-${i}`;
+        spray.style.left = getResponsiveValue(795) + 'px';
+        spray.style.top = getResponsiveHeight(170 + i*50) + 'px';
+        spray.style.backgroundColor = '#00B0FF';
+        layout.appendChild(spray);
+      }
+      
+      // Keran otomatis (bawah)
+      const faucet2 = document.createElement('div');
+      faucet2.className = 'keran';
+      faucet2.id = 'faucet-2';
+      faucet2.style.left = getResponsiveValue(440) + 'px';
+      faucet2.style.top = getResponsiveHeight(372) + 'px';
+      faucet2.innerHTML = '<i class="fas fa-faucet"></i>';
+      faucet2.addEventListener('click', () => toggleFaucet(1));
+      layout.appendChild(faucet2);
+      
+      createPipe(440, 360, 15, 40, false, 'faucet2-pipe-vertical');
+      const faucet2PipeWater = createPipeWater(441, 360, 11, 40, false, 'faucet2-pipe-water');
+      
+      createPipe(440, 402, 200, 15, true, 'faucet2-pipe-horizontal');
+      const faucet2PipeHorizontalWater = createPipeWater(440, 403, 200, 11, true, 'faucet2-pipe-horizontal-water');
+      
+      // Buat 4 pohon untuk keran bawah
+      for (let i = 0; i < 4; i++) {
+        const tree = document.createElement('div');
+        tree.className = 'pohon';
+        tree.style.left = getResponsiveValue(480 + i*50) + 'px';
+        tree.style.top = getResponsiveHeight(420) + 'px';
+        
+        const trunk = document.createElement('div');
+        trunk.className = 'tree-trunk';
+        
+        const leaves = document.createElement('div');
+        leaves.className = 'tree-leaves';
+        
+        tree.appendChild(trunk);
+        tree.appendChild(leaves);
+        layout.appendChild(tree);
+        
+        // Sprinkler untuk setiap pohon
+        const sprinkler = document.createElement('div');
+        sprinkler.className = 'sprinkler';
+        sprinkler.style.left = getResponsiveValue(500 + i*50) + 'px';
+        sprinkler.style.top = getResponsiveHeight(408) + 'px';
+        sprinkler.innerHTML = '<i class="fas fa-shower"></i>';
+        layout.appendChild(sprinkler);
+        
+        const spray = document.createElement('div');
+        spray.className = 'water-spray';
+        spray.id = `spray-faucet2-${i}`;
+        spray.style.left = getResponsiveValue(480 + i*50) + 'px';
+        spray.style.top = getResponsiveHeight(388) + 'px';
+        spray.style.backgroundColor = '#00B0FF';
+        layout.appendChild(spray);
+      }
+      
+      // Fungsi untuk mengubah status pompa
+      function togglePump() {
+        pumpOn = !pumpOn;
+        
+        if (pumpOn) {
+          pumpBtn.innerHTML = '<i class="fas fa-power-off"></i> Matikan Pompa';
+          pumpBtn.classList.add('active');
+          statusText.innerHTML = '<i class="fas fa-info-circle"></i> Status: Pompa hidup. Menunggu valve dibuka.';
+          
+          // Aktifkan tombol valve
+          valve1Btn.disabled = false;
+          valve2Btn.disabled = false;
+          valve3Btn.disabled = false;
+          valve4Btn.disabled = false;
+          
+          // Isi pipa utama dengan air
+          mainPipeWater.style.height = getResponsiveHeight(120) + 'px';
+          mainPipeHorizontalWater.style.width = getResponsiveValue(470) + 'px';
+          
+          // Air harus sampai ke keran sebelum L terakhir meski semua valve tertutup
+          rightPipeWater.style.width = getResponsiveValue(320) + 'px'; // Sampai ke keran di 720px
+        } else {
+          pumpBtn.innerHTML = '<i class="fas fa-power-off"></i> Hidupkan Pompa';
+          pumpBtn.classList.remove('active');
+          statusText.innerHTML = '<i class="fas fa-info-circle"></i> Status: Pompa mati. Semua valve tertutup.';
+          
+          // Nonaktifkan tombol valve
+          valve1Btn.disabled = true;
+          valve2Btn.disabled = true;
+          valve3Btn.disabled = true;
+          valve4Btn.disabled = true;
+          
+          // Kosongkan semua pipa air
+          mainPipeWater.style.height = '0px';
+          mainPipeHorizontalWater.style.width = '0px';
+          leftPipeWater.style.height = '0px';
+          rightPipeWater.style.width = '0px';
+          afterFaucetPipeWater.style.width = '0px';
+          lastLPipeWater.style.height = '0px';
+          faucet2PipeWater.style.height = '0px';
+          faucet2PipeHorizontalWater.style.width = '0px';
+          
+          // Kosongkan pipa untuk setiap valve
+          for (let i = 2; i <= 4; i++) {
+            document.getElementById(`valve${i}-pipe-water`).style.height = '0px';
+          }
+          
+          // Matikan semua sprinkler
+          for (let i = 0; i < 3; i++) {
+            document.getElementById(`spray-left-${i}`).classList.remove('active');
+            document.getElementById(`spray-last-${i}`).classList.remove('active');
+            for (let j = 2; j <= 4; j++) {
+              document.getElementById(`spray-valve${j}-${i}`).classList.remove('active');
+            }
+          }
+          
+          for (let i = 0; i < 4; i++) {
+            document.getElementById(`spray-faucet2-${i}`).classList.remove('active');
+          }
+          
+          // Reset status valve
+          for (let i = 0; i < 4; i++) {
+            valveStates[i] = false;
+            document.getElementById(`valve-${i+1}`).className = 'valve closed';
+            document.getElementById(`valve-${i+1}`).innerHTML = '<i class="fas fa-stop-circle"></i>';
+          }
+          
+          // Reset status keran
+          for (let i = 0; i < 2; i++) {
+            faucetStates[i] = false;
+            document.getElementById(`faucet-${i+1}`).style.background = 'linear-gradient(to bottom, #FF9800, #F57C00)';
+          }
+          
+          // Update teks tombol valve
+          valve1Btn.innerHTML = '<i class="fas fa-valve"></i> Valve 1: Tertutup';
+          valve2Btn.innerHTML = '<i class="fas fa-valve"></i> Valve 2: Tertutup';
+          valve3Btn.innerHTML = '<i class="fas fa-valve"></i> Valve 3: Tertutup';
+          valve4Btn.innerHTML = '<i class="fas fa-valve"></i> Valve 4: Tertutup';
+        }
+      }
+      
+      // Fungsi untuk mengubah status valve
+      function toggleValve(index) {
+        if (!pumpOn) return;
+        
+        valveStates[index] = !valveStates[index];
+        const valveBtn = document.getElementById(`valve${index+1}-btn`);
+        
+        if (valveStates[index]) {
+          document.getElementById(`valve-${index+1}`).className = 'valve open';
+          document.getElementById(`valve-${index+1}`).innerHTML = '<i class="fas fa-play-circle"></i>';
+          valveBtn.textContent = `Valve ${index+1}: Terbuka`;
+          valveBtn.classList.add('active');
+          
+          // Isi pipa dengan air dan aktifkan sprinkler berdasarkan valve
+          switch(index) {
+            case 0: // Valve 1 - kiri
+              leftPipeWater.style.height = getResponsiveHeight(240) + 'px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-left-${i}`).classList.add('active');
+              }
+              break;
+            case 1: // Valve 2 - tengah 1
+              document.getElementById('valve2-pipe-water').style.height = getResponsiveHeight(120) + 'px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-valve2-${i}`).classList.add('active');
+              }
+              break;
+            case 2: // Valve 3 - tengah 2
+              document.getElementById('valve3-pipe-water').style.height = getResponsiveHeight(120) + 'px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-valve3-${i}`).classList.add('active');
+              }
+              break;
+            case 3: // Valve 4 - kanan
+              document.getElementById('valve4-pipe-water').style.height = getResponsiveHeight(120) + 'px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-valve4-${i}`).classList.add('active');
+              }
+              break;
+          }
+          
+          statusText.innerHTML = `<i class="fas fa-info-circle"></i> Status: Pompa hidup. Valve ${index+1} terbuka.`;
+        } else {
+          document.getElementById(`valve-${index+1}`).className = 'valve closed';
+          document.getElementById(`valve-${index+1}`).innerHTML = '<i class="fas fa-stop-circle"></i>';
+          valveBtn.textContent = `Valve ${index+1}: Tertutup`;
+          valveBtn.classList.remove('active');
+          
+          // Kosongkan pipa dan matikan sprinkler berdasarkan valve
+          switch(index) {
+            case 0: // Valve 1 - kiri
+              leftPipeWater.style.height = '0px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-left-${i}`).classList.remove('active');
+              }
+              break;
+            case 1: // Valve 2 - tengah 1
+              document.getElementById('valve2-pipe-water').style.height = '0px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-valve2-${i}`).classList.remove('active');
+              }
+              break;
+            case 2: // Valve 3 - tengah 2
+              document.getElementById('valve3-pipe-water').style.height = '0px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-valve3-${i}`).classList.remove('active');
+              }
+              break;
+            case 3: // Valve 4 - kanan
+              document.getElementById('valve4-pipe-water').style.height = '0px';
+              for (let i = 0; i < 3; i++) {
+                document.getElementById(`spray-valve4-${i}`).classList.remove('active');
+              }
+              break;
+          }
+          
+          statusText.innerHTML = '<i class="fas fa-info-circle"></i> Status: Pompa hidup. Menunggu valve dibuka.';
+        }
+      }
+      
+      // Fungsi untuk mengubah status keran manual
+      function toggleFaucet(index) {
+        if (!pumpOn) return;
+        
+        faucetStates[index] = !faucetStates[index];
+        
+        if (faucetStates[index]) {
+          document.getElementById(`faucet-${index+1}`).style.background = 'linear-gradient(to bottom, #4CAF50, #2E7D32)';
+          
+          // Isi pipa dengan air
+          if (index === 0) {
+            // Keran utama - buka aliran ke L terakhir
+            afterFaucetPipeWater.style.width = getResponsiveValue(80) + 'px';
+            lastLPipeWater.style.height = getResponsiveHeight(120) + 'px';
+            for (let i = 0; i < 3; i++) {
+              document.getElementById(`spray-last-${i}`).classList.add('active');
+            }
+          } else {
+            // Keran bawah
+            faucet2PipeWater.style.height = getResponsiveHeight(40) + 'px';
+            faucet2PipeHorizontalWater.style.width = getResponsiveValue(200) + 'px';
+            for (let i = 0; i < 4; i++) {
+              document.getElementById(`spray-faucet2-${i}`).classList.add('active');
+            }
+          }
+          
+          statusText.innerHTML = `<i class="fas fa-info-circle"></i> Status: Pompa hidup. Keran manual ${index+1} terbuka.`;
+        } else {
+          document.getElementById(`faucet-${index+1}`).style.background = 'linear-gradient(to bottom, #FF9800, #F57C00)';
+          
+          // Kosongkan pipa
+          if (index === 0) {
+            afterFaucetPipeWater.style.width = '0px';
+            lastLPipeWater.style.height = '0px';
+            for (let i = 0; i < 3; i++) {
+              document.getElementById(`spray-last-${i}`).classList.remove('active');
+            }
+          } else {
+            faucet2PipeWater.style.height = '0px';
+            faucet2PipeHorizontalWater.style.width = '0px';
+            for (let i = 0; i < 4; i++) {
+              document.getElementById(`spray-faucet2-${i}`).classList.remove('active');
+            }
+          }
+          
+          statusText.innerHTML = '<i class="fas fa-info-circle"></i> Status: Pompa hidup. Menunggu valve dibuka.';
+        }
+      }
+      
+      // Event listeners untuk tombol
+      pumpBtn.addEventListener('click', togglePump);
+      valve1Btn.addEventListener('click', () => toggleValve(0));
+      valve2Btn.addEventListener('click', () => toggleValve(1));
+      valve3Btn.addEventListener('click', () => toggleValve(2));
+      valve4Btn.addEventListener('click', () => toggleValve(3));
+
+      window.addEventListener('resize', function() {
+        // Recalculate positions on window resize
+        location.reload(); // Simple approach - reload to recalculate all positions
+      });
+    });
+  </script>
+</body>
+</html>
