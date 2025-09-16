@@ -1526,7 +1526,7 @@ export default function WateringAnimation() {
                 e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
               }}>
                 <img 
-                  src="/PLN.JPG" 
+                  src="/PLN.jpg" 
                   alt="PLN Logo" 
                   style={{
                     width: "100%",
