@@ -1486,7 +1486,7 @@ export default function WateringAnimation() {
           overflow: "hidden"
         }}>
           <img 
-            src="/JWF.PNG" 
+            src="/JWF.png" 
             alt="Jayawangi Farm Logo" 
             style={{
               width: "100%",
