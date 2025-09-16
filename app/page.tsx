@@ -1,12 +1,74 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { 
+  readIrrigationData, 
+  writeIrrigationData, 
+  updatePumpStatus, 
+  updateValveStatus, 
+  listenIrrigationData 
+} from "@/lib/firebase"
 
 export default function WateringAnimation() {
   const layoutRef = useRef<HTMLDivElement>(null)
   const [pumpOn, setPumpOn] = useState(false)
   const [valveStates, setValveStates] = useState([false, false, false, false, false])
   const [status, setStatus] = useState("Status: Pompa mati. Semua valve tertutup.")
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load data awal dari Firebase
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const data = await readIrrigationData()
+        setPumpOn(data.pompa)
+        setValveStates([data.valve1, data.valve2, data.valve3, data.valve4, data.valve5])
+        
+        if (data.pompa) {
+          const openValves = [data.valve1, data.valve2, data.valve3, data.valve4, data.valve5]
+            .map((state, index) => state ? index + 1 : null)
+            .filter(valve => valve !== null)
+          
+          if (openValves.length > 0) {
+            setStatus(`Status: Pompa hidup. Valve ${openValves.join(', ')} terbuka.`)
+          } else {
+            setStatus("Status: Pompa hidup. Siap untuk menyiram.")
+          }
+        } else {
+          setStatus("Status: Pompa mati. Semua valve tertutup.")
+        }
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error loading initial data:', error)
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialData()
+
+    // Setup real-time listener
+    const unsubscribe = listenIrrigationData((data) => {
+      setPumpOn(data.pompa)
+      setValveStates([data.valve1, data.valve2, data.valve3, data.valve4, data.valve5])
+      
+      if (data.pompa) {
+        const openValves = [data.valve1, data.valve2, data.valve3, data.valve4, data.valve5]
+          .map((state, index) => state ? index + 1 : null)
+          .filter(valve => valve !== null)
+        
+        if (openValves.length > 0) {
+          setStatus(`Status: Pompa hidup. Valve ${openValves.join(', ')} terbuka.`)
+        } else {
+          setStatus("Status: Pompa hidup. Siap untuk menyiram.")
+        }
+      } else {
+        setStatus("Status: Pompa mati. Semua valve tertutup.")
+      }
+    })
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe()
+  }, [])
 
   const getResponsiveValue = (baseValue: number, containerWidth = 850) => {
     if (!layoutRef.current) return baseValue * 0.9 // Scale down by default
@@ -41,8 +103,34 @@ export default function WateringAnimation() {
     return pipe
   }
 
-  const togglePump = () => {
-    setPumpOn(!pumpOn)
+  const togglePump = async () => {
+    const newPumpState = !pumpOn
+    setPumpOn(newPumpState)
+
+    // Update ke Firebase (async, tidak blocking animasi)
+    const updateFirebase = async () => {
+      try {
+        await updatePumpStatus(newPumpState)
+        
+        // Jika pompa dimatikan, matikan semua valve juga
+        if (!newPumpState) {
+          await writeIrrigationData({
+            pompa: false,
+            valve1: false,
+            valve2: false,
+            valve3: false,
+            valve4: false,
+            valve5: false,
+          })
+        }
+      } catch (error) {
+        console.error('Error updating pump status to Firebase:', error)
+        // Revert state jika gagal update ke Firebase
+        setPumpOn(pumpOn)
+      }
+    }
+    
+    updateFirebase()
 
     const pumpIcon = document.getElementById("pump-icon")
     if (pumpIcon) {
@@ -82,17 +170,25 @@ export default function WateringAnimation() {
     }
   }
 
-  const toggleValve = (index: number) => {
+  const toggleValve = async (index: number) => {
     if (!pumpOn) return
 
     const newValveStates = [...valveStates]
-    newValveStates[index] = !newValveStates[index]
+    const newValveState = !newValveStates[index]
+    newValveStates[index] = newValveState
     setValveStates(newValveStates)
+
+    // Update ke Firebase (async, tidak blocking animasi)
+    updateValveStatus(index + 1, newValveState).catch(error => {
+      console.error(`Error updating valve ${index + 1} status to Firebase:`, error)
+      // Revert state jika gagal update ke Firebase
+      setValveStates(valveStates)
+    })
 
     const valve = document.getElementById(`valve-${index + 1}`)
     if (!valve) return
 
-    if (newValveStates[index]) {
+    if (newValveState) {
       valve.className = "valve open"
       valve.style.setProperty('background-color', '#2196F3', 'important')
       valve.innerHTML = '<i class="fas fa-play-circle"></i>'
@@ -1425,9 +1521,20 @@ export default function WateringAnimation() {
         </div>
 
         <div className="controls">
-          <button className={`control-btn pump-btn ${pumpOn ? "active" : ""}`} onClick={togglePump}>
-            <i className="fas fa-power-off"></i> {pumpOn ? "Matikan Pompa" : "Hidupkan Pompa"}
-          </button>
+          {isLoading ? (
+            <div style={{
+              textAlign: "center",
+              padding: "20px",
+              color: "#FED16A",
+              fontSize: "16px"
+            }}>
+              <i className="fas fa-spinner fa-spin"></i> Loading data...
+            </div>
+          ) : (
+            <>
+              <button className={`control-btn pump-btn ${pumpOn ? "active" : ""}`} onClick={togglePump}>
+                <i className="fas fa-power-off"></i> {pumpOn ? "Matikan Pompa" : "Hidupkan Pompa"}
+              </button>
           <button
             className={`control-btn valve-btn ${valveStates[0] ? "active" : ""}`}
             disabled={!pumpOn}
@@ -1463,77 +1570,155 @@ export default function WateringAnimation() {
           >
             <i className="fas fa-valve"></i> Valve 5: {valveStates[4] ? "Terbuka" : "Tertutup"}
           </button>
-        </div>
-
-
-        <div className="status">
-          <i className="fas fa-info-circle"></i> {status}
+            </>
+          )}
         </div>
         
-        {/* Support By Section */}
+        {/* Container untuk kedua section - posisi horizontal */}
         <div style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          gap: "clamp(20px, 3vw, 30px)",
           marginTop: "clamp(20px, 4vh, 30px)",
-          padding: "clamp(15px, 2.5vw, 25px)",
-          background: "linear-gradient(145deg, rgba(22, 97, 14, 0.9), rgba(15, 74, 11, 0.9))",
-          borderRadius: "15px",
-          border: "2px solid #F97A00",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-          textAlign: "center",
-          position: "relative",
-          zIndex: 10
+          flexWrap: "wrap"
         }}>
+          {/* Di Danai Oleh Section */}
           <div style={{
-            color: "#FFF4A4",
-            fontSize: "clamp(12px, 1.8vw, 20px)",
-            fontWeight: "600",
-            marginBottom: "clamp(10px, 2vw, 15px)",
-            textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)"
+            padding: "clamp(15px, 2.5vw, 25px)",
+            background: "linear-gradient(145deg, rgba(22, 97, 14, 0.9), rgba(15, 74, 11, 0.9))",
+            borderRadius: "15px",
+            border: "2px solid #F97A00",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+            textAlign: "center",
+            position: "relative",
+            zIndex: 10,
+            flex: "1",
+            minWidth: "clamp(250px, 30vw, 350px)"
           }}>
-            Support By
-          </div>
-          
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "clamp(15px, 3vw, 25px)",
-            flexWrap: "wrap"
-          }}>
-            {/* Company Logo 1 */}
+            <div style={{
+              color: "#FFF4A4",
+              fontSize: "clamp(12px, 1.8vw, 20px)",
+              fontWeight: "600",
+              marginBottom: "clamp(10px, 2vw, 15px)",
+              textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)"
+            }}>
+              Di danai oleh
+            </div>
+            
             <div style={{
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
-              gap: "clamp(5px, 1vw, 8px)"
+              justifyContent: "center",
+              gap: "clamp(15px, 3vw, 25px)",
+              flexWrap: "wrap"
             }}>
+              {/* Company Logo 1 */}
               <div style={{
-                width: "clamp(100px, 15vw, 140px)",
-                height: "clamp(40px, 6vw, 60px)",
-                borderRadius: "25%",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-                transition: "all 0.3s ease",
-                overflow: "hidden"
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)"
-                e.currentTarget.style.boxShadow = "0 6px 20px rgba(249, 122, 0, 0.4)"
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = "scale(1)"
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
+                gap: "clamp(5px, 1vw, 8px)"
               }}>
-                <img 
-                  src="/PLN.jpg" 
-                  alt="PLN Logo" 
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain"
-                  }}
-                />
+                <div style={{
+                  width: "clamp(100px, 15vw, 140px)",
+                  height: "clamp(40px, 6vw, 60px)",
+                  borderRadius: "25%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                  transition: "all 0.3s ease",
+                  overflow: "hidden"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)"
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(249, 122, 0, 0.4)"
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "scale(1)"
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
+                }}>
+                  <img 
+                    src="/PLN.jpg" 
+                    alt="PLN Logo" 
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain"
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Kolaborasi Dengan Section */}
+          <div style={{
+            padding: "clamp(15px, 2.5vw, 25px)",
+            background: "linear-gradient(145deg, rgba(25, 97, 14, 0.9), rgba(18, 74, 11, 0.9))",
+            borderRadius: "15px",
+            border: "2px solid #F97A00",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+            textAlign: "center",
+            position: "relative",
+            zIndex: 10,
+            flex: "1",
+            minWidth: "clamp(250px, 30vw, 350px)"
+          }}>
+            <div style={{
+              color: "#FFF4A4",
+              fontSize: "clamp(12px, 1.8vw, 20px)",
+              fontWeight: "600",
+              marginBottom: "clamp(10px, 2vw, 15px)",
+              textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)"
+            }}>
+              Kolaborasi dengan
+            </div>
+            
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "clamp(15px, 3vw, 25px)",
+              flexWrap: "wrap"
+            }}>
+              {/* Partner Logo 1 */}
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "clamp(5px, 1vw, 8px)"
+              }}>
+                <div style={{
+                  width: "clamp(100px, 15vw, 140px)",
+                  height: "clamp(40px, 6vw, 60px)",
+                  borderRadius: "25%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                  transition: "all 0.3s ease",
+                  overflow: "hidden"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)"
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(249, 122, 0, 0.4)"
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "scale(1)"
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
+                }}>
+                  <img 
+                    src="/UMMI.png" 
+                    alt="UMMI Logo" 
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain"
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
