@@ -1390,7 +1390,7 @@ export default function WateringAnimation() {
           overflow: "hidden"
         }}>
           <img 
-            src="/JWF.PNG" 
+            src="/JWF.png" 
             alt="Jayawangi Farm Logo" 
             style={{
               width: "100%",
@@ -1526,7 +1526,7 @@ export default function WateringAnimation() {
                 e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
               }}>
                 <img 
-                  src="/PLN.JPG" 
+                  src="/PLN.jpg" 
                   alt="PLN Logo" 
                   style={{
                     width: "100%",
