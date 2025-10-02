@@ -1603,7 +1603,7 @@ export default function WateringAnimation() {
               marginBottom: "clamp(10px, 2vw, 15px)",
               textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)"
             }}>
-              Di danai oleh
+              Didanai oleh
             </div>
             
             <div style={{
