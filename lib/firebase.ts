@@ -4,13 +4,14 @@ import { getDatabase, ref, set, get, onValue } from "firebase/database";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCsgfXfuxwZTYmXpAa3cmoJudsOmWx8g9E",
-  authDomain: "jayawangi-65dd2.firebaseapp.com",
-  databaseURL: "https://jayawangi-65dd2-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jayawangi-65dd2",
-  storageBucket: "jayawangi-65dd2.firebasestorage.app",
-  messagingSenderId: "430991747678",
-  appId: "1:430991747678:web:d9cf8e842eed2be20722cf"
+  apiKey: "AIzaSyD62oKPEbSEh01ivm1oZecOZwlPtruqKho",
+  authDomain: "jayawangi23-22605.firebaseapp.com",
+  databaseURL: "https://jayawangi23-22605-default-rtdb.firebaseio.com",
+  projectId: "jayawangi23-22605",
+  storageBucket: "jayawangi23-22605.firebasestorage.app",
+  messagingSenderId: "599981298575",
+  appId: "1:599981298575:web:58d92c0829e4487c6fb1fa",
+  measurementId: "G-P4Z4XPBLCP",
 };
 
 // Initialize Firebase
